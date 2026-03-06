@@ -31,7 +31,7 @@ export default function GoogleAuthButton() {
   return (
     <div>
       <button
-        className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center rounded-full border border-cyan-300/35 bg-cyan-300/15 px-5 py-3 text-sm font-semibold text-cyan-50 transition hover:bg-cyan-300/25 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isLoading}
         onClick={handleSignIn}
         type="button"

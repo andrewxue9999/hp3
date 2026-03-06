@@ -31,7 +31,7 @@ export default function SignOutButton() {
   return (
     <div className="flex items-center gap-3">
       <button
-        className="rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isLoading}
         onClick={handleSignOut}
         type="button"

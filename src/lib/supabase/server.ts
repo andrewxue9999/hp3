@@ -29,3 +29,32 @@ export const createClient = async () => {
     },
   });
 };
+
+export async function getUserSafely() {
+  const supabase = await createClient();
+
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    return user ?? null;
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "refresh_token_not_found"
+    ) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // Ignore cleanup failures for stale anonymous sessions.
+      }
+
+      return null;
+    }
+
+    throw error;
+  }
+}

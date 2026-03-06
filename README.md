@@ -1,7 +1,18 @@
-# H-P
-AI Website Project
+# HP2 Meme Admin
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Protected admin dashboard and moderation surface for the existing Supabase meme database.
+
+## What Changed
+
+The app now includes a new `/admin` area with:
+
+- Google OAuth login through Supabase Auth
+- server-side authorization against `profiles.is_superadmin`
+- statistics dashboard for votes, ratios, contributor performance, and recent activity
+- image CRUD
+- read-only management views for captions, profiles, and Supabase auth users
+
+No RLS policies are modified by this codebase. Admin-only reads and mutations use the Supabase service role key on the server only.
 
 ## Environment Variables
 
@@ -10,55 +21,87 @@ Create `.env.local` from `.env.example` and set:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project-id>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
+# or use Supabase's newer server key format instead:
+SUPABASE_SECRET_KEY=<your-supabase-secret-key>
 ```
 
-For Vercel, set the same two variables in Project Settings -> Environment Variables for Production (and Preview if needed), then redeploy.
+For Vercel, set the public variables plus one server admin key in Project Settings -> Environment Variables for Production and Preview.
 
-## Google OAuth (Supabase Auth)
+## Auth Flow
 
-This app uses Supabase Auth with Google OAuth. No Google client secret is required in this codebase.
+- Google sign-in starts from the public home page.
+- Supabase redirects back to `/auth/callback`.
+- The callback exchanges the code for a session and redirects to `/admin`.
+- Every route under `/admin` checks:
+  1. the user is authenticated
+  2. the matching `profiles` row has `is_superadmin = true`
 
-Use this Google OAuth Client ID in your provider setup:
+Users who fail the second check are denied and sent back to `/`.
 
-`388960353527-fh4grc6mla425lg0e3g1hh67omtrdihd.apps.googleusercontent.com`
+## Bootstrap Superadmin
 
-Set your redirect URI to:
+The admin area requires:
 
-`http://localhost:3000/auth/callback` (local dev)
+- one server admin key: `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY`
+- at least one profile with `is_superadmin = true`
 
-This app initiates sign-in with a redirect target of exactly `/auth/callback`.
+Use Supabase SQL Editor or any existing server-side admin access and run:
 
-## Getting Started
+```sql
+update public.profiles
+set is_superadmin = true
+where id in (
+  'YOUR-USER-UUID-HERE'
+);
+```
 
-First, run the development server:
+If you prefer identifying the profile by email first, look up the profile or auth user in Supabase Studio, copy the UUID, then run the update above.
+
+Important:
+
+- Do not expose `SUPABASE_SERVICE_ROLE_KEY` to client code.
+- Do not change RLS policies for this bootstrap.
+- This must be done once before first admin login.
+
+Bootstrap performed in this project:
+
+- Updated `public.profiles.is_superadmin` from `false` to `true` for `andyxue291@gmail.com`
+- Profile ID: `3e4e408e-6de1-4f41-bdd7-109703d12678`
+- Method: server-side admin key via Supabase admin client, no RLS policy changes
+
+## Google OAuth Setup
+
+This app uses Supabase Auth with Google OAuth. The callback path is exactly:
+
+- Local: `http://localhost:3000/auth/callback`
+- Vercel: `https://<your-deployment-domain>/auth/callback`
+
+The code always initiates sign-in with `/auth/callback` and performs the final redirect to `/admin` server-side.
+
+## Local Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `src/app/page.tsx`. The page auto-updates as you edit the file.
+## Verification
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The current codebase passes:
 
-## Learn More
+```bash
+npm run lint
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+Lint still reports existing `@next/next/no-img-element` warnings for image-heavy views, but there are no build errors.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Vercel Notes
 
-You can check out the [Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Build command: `npm run build`
+- Output: standard Next.js output
+- No secrets are hardcoded in the repo
+- The service role key is only read in server-only modules

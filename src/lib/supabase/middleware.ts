@@ -2,6 +2,15 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
+function clearSupabaseCookies(request: NextRequest, response: NextResponse) {
+  for (const cookie of request.cookies.getAll()) {
+    if (!cookie.name.startsWith("sb-")) continue;
+
+    request.cookies.delete(cookie.name);
+    response.cookies.delete(cookie.name);
+  }
+}
+
 export const updateSession = async (request: NextRequest) => {
   const response = NextResponse.next({ request });
   const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
@@ -26,7 +35,21 @@ export const updateSession = async (request: NextRequest) => {
     },
   });
 
-  await supabase.auth.getUser();
+  try {
+    await supabase.auth.getUser();
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "refresh_token_not_found"
+    ) {
+      clearSupabaseCookies(request, response);
+      return response;
+    }
+
+    throw error;
+  }
 
   return response;
 };
