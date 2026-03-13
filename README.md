@@ -64,12 +64,6 @@ Important:
 - Do not change RLS policies for this bootstrap.
 - This must be done once before first admin login.
 
-Bootstrap performed in this project:
-
-- Updated `public.profiles.is_superadmin` from `false` to `true` for `andyxue291@gmail.com`
-- Profile ID: `3e4e408e-6de1-4f41-bdd7-109703d12678`
-- Method: server-side admin key via Supabase admin client, no RLS policy changes
-
 ## Google OAuth Setup
 
 This app uses Supabase Auth with Google OAuth. The callback path is exactly:
@@ -88,20 +82,15 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-## Verification
-
-The current codebase passes:
-
-```bash
-npm run lint
-npm run build
-```
-
-Lint still reports existing `@next/next/no-img-element` warnings for image-heavy views, but there are no build errors.
-
 ## Vercel Notes
 
 - Build command: `npm run build`
-- Output: standard Next.js output
+- Output:
+  - Vercel uses the standard Next.js `.next` output directory
+  - local development in this OneDrive-backed workspace uses `.next-webpack` to avoid locked-cache issues
 - No secrets are hardcoded in the repo
 - The service role key is only read in server-only modules
+- Required Vercel environment variables:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - one of `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY`

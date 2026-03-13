@@ -4,6 +4,6 @@ type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default function AdminImagesPage({ searchParams }: PageProps) {
-  return <AdminResourcePage searchParams={searchParams} slug="images" />;
+export default function AdminLlmPromptChainsPage({ searchParams }: PageProps) {
+  return <AdminResourcePage searchParams={searchParams} slug="llm-prompt-chains" />;
 }

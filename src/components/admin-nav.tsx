@@ -5,10 +5,21 @@ import { usePathname } from "next/navigation";
 
 const items = [
   { href: "/admin", label: "Dashboard" },
-  { href: "/admin/images", label: "Images" },
-  { href: "/admin/captions", label: "Captions" },
-  { href: "/admin/profiles", label: "Profiles" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/images", label: "Images" },
+  { href: "/admin/humor-flavors", label: "Humor Flavors" },
+  { href: "/admin/humor-flavor-steps", label: "Flavor Steps" },
+  { href: "/admin/humor-mix", label: "Humor Mix" },
+  { href: "/admin/terms", label: "Terms" },
+  { href: "/admin/captions", label: "Captions" },
+  { href: "/admin/caption-requests", label: "Caption Requests" },
+  { href: "/admin/caption-examples", label: "Caption Examples" },
+  { href: "/admin/llm-models", label: "LLM Models" },
+  { href: "/admin/llm-providers", label: "LLM Providers" },
+  { href: "/admin/llm-prompt-chains", label: "Prompt Chains" },
+  { href: "/admin/llm-responses", label: "LLM Responses" },
+  { href: "/admin/allowed-signup-domains", label: "Signup Domains" },
+  { href: "/admin/whitelisted-emails", label: "Whitelisted Emails" },
 ];
 
 export default function AdminNav() {
