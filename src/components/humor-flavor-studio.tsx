@@ -109,23 +109,19 @@ export default function HumorFlavorStudio({
       <section className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="space-y-6">
           <section className="rounded-[2rem] border border-[color:var(--border)] bg-[var(--surface)] p-5">
-            {panelTitle("Create", "New humor flavor", "Start a new prompt chain with a name, slug, and optional description.")}
+            {panelTitle("Create", "New humor flavor", "Write directly to `humor_flavors.slug` and `description`.")}
+            <div className="mt-4 rounded-[1.2rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4 text-sm leading-7 text-[var(--muted-foreground)]">
+              Use `slug` as the unique machine-friendly identifier for the flavor.
+              `description` should explain the style or goal of the chain so you can recognize it later.
+            </div>
             <form action={createFlavorAction} className="mt-5 space-y-4">
               <label className="block">
-                <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Name</span>
-                <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="name" required />
+                <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">slug</span>
+                <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="slug" required />
               </label>
               <label className="block">
-                <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Slug</span>
-                <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="slug" />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Description</span>
+                <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">description</span>
                 <textarea className="min-h-28 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="description" />
-              </label>
-              <label className="flex items-center gap-3 rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--foreground)]">
-                <input className="h-4 w-4" defaultChecked name="is_active" type="checkbox" />
-                Active flavor
               </label>
               <button className="w-full rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]" type="submit">
                 Create Flavor
@@ -146,16 +142,16 @@ export default function HumorFlavorStudio({
                         ? "border-[color:var(--accent)] bg-[var(--accent-soft)]"
                         : "border-[color:var(--border)] bg-[var(--surface-muted)] hover:border-[color:var(--border-strong)]"
                     }`}
-                    href={`/admin/humor-flavors?flavor=${encodeURIComponent(flavor.id)}`}
+                      href={`/admin/humor-flavors?flavor=${encodeURIComponent(flavor.id)}`}
                     key={flavor.id}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-[var(--foreground)]">{flavor.name}</p>
+                        <p className="text-sm font-semibold text-[var(--foreground)]">{flavor.label}</p>
                         <p className="mt-1 text-xs text-[var(--muted-foreground)]">{flavor.slug ?? "No slug"}</p>
                       </div>
-                      <span className="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]" style={{ background: flavor.isActive === false ? "var(--danger-soft)" : "var(--success-soft)" }}>
-                        {flavor.isActive === false ? "Paused" : "Active"}
+                      <span className="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]" style={{ background: "var(--surface-strong)" }}>
+                        Flavor
                       </span>
                     </div>
                     <p className="mt-3 line-clamp-3 text-sm text-[var(--muted-foreground)]">
@@ -173,29 +169,21 @@ export default function HumorFlavorStudio({
             <>
               <section className="rounded-[2rem] border border-[color:var(--border)] bg-[var(--surface)] p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                  {panelTitle("Selected Flavor", selectedFlavor.name, "Edit the flavor metadata, then manage the ordered prompt-chain steps below.")}
+                  {panelTitle("Selected Flavor", selectedFlavor.label, "Edit the flavor metadata, then manage the ordered prompt-chain steps below.")}
                   <div className="rounded-[1.25rem] border border-[color:var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--muted-foreground)]">
                     Flavor ID: <span className="font-medium text-[var(--foreground)]">{selectedFlavor.id}</span>
                   </div>
                 </div>
 
-                <form action={updateFlavorAction} className="mt-6 grid gap-4 lg:grid-cols-2">
+                <form action={updateFlavorAction} className="mt-6 grid gap-4 lg:grid-cols-1">
                   <input name="flavor_id" type="hidden" value={selectedFlavor.id} />
                   <label className="block">
-                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Name</span>
-                    <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={selectedFlavor.name} name="name" required />
+                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">slug</span>
+                    <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={selectedFlavor.slug ?? ""} name="slug" required />
                   </label>
                   <label className="block">
-                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Slug</span>
-                    <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={selectedFlavor.slug ?? ""} name="slug" />
-                  </label>
-                  <label className="block lg:col-span-2">
-                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Description</span>
+                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">description</span>
                     <textarea className="min-h-28 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={selectedFlavor.description ?? ""} name="description" />
-                  </label>
-                  <label className="flex items-center gap-3 rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--foreground)]">
-                    <input className="h-4 w-4" defaultChecked={selectedFlavor.isActive !== false} name="is_active" type="checkbox" />
-                    Active flavor
                   </label>
                   <div className="flex flex-wrap gap-3">
                     <button className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]" type="submit">
@@ -213,32 +201,32 @@ export default function HumorFlavorStudio({
               </section>
 
               <section className="rounded-[2rem] border border-[color:var(--border)] bg-[var(--surface)] p-6">
-                {panelTitle("Step Builder", "Ordered humor flavor steps", "Create and edit the prompt chain in the exact sequence the flavor should run.")}
+                {panelTitle("Step Builder", "Ordered humor flavor steps", "Write directly to `humor_flavor_steps.humor_flavor_id`, `description`, `order_by`, `llm_system_prompt`, `llm_user_prompt`, and `llm_temperature`.")}
+                <div className="mt-4 rounded-[1.2rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4 text-sm leading-7 text-[var(--muted-foreground)]">
+                  Each step runs in ascending `order_by`. A good pattern is:
+                  step 1 describes the image, step 2 finds the humor angle, step 3 writes final captions.
+                </div>
 
                 <form action={createStepAction} className="mt-6 grid gap-4 lg:grid-cols-2">
                   <input name="flavor_id" type="hidden" value={selectedFlavor.id} />
                   <label className="block">
-                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Step name</span>
-                    <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="step_name" required />
+                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">description</span>
+                    <textarea className="min-h-24 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="step_description" required />
                   </label>
                   <label className="block">
-                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Step order</span>
+                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">order_by</span>
                     <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={selectedSteps.length + 1} name="step_order" type="number" />
                   </label>
-                  <label className="block lg:col-span-2">
-                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Description</span>
-                    <textarea className="min-h-24 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="step_description" />
-                  </label>
                   <label className="block">
-                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">System prompt</span>
+                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_system_prompt</span>
                     <textarea className="min-h-36 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="system_prompt" />
                   </label>
                   <label className="block">
-                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">User prompt</span>
+                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_user_prompt</span>
                     <textarea className="min-h-36 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="user_prompt" />
                   </label>
                   <label className="block lg:max-w-xs">
-                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Temperature</span>
+                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_temperature</span>
                     <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue="0.8" name="temperature" type="number" step="0.1" />
                   </label>
                   <div className="flex items-end">
@@ -282,27 +270,23 @@ export default function HumorFlavorStudio({
                           <input name="flavor_id" type="hidden" value={selectedFlavor.id} />
                           <input name="step_id" type="hidden" value={step.id} />
                           <label className="block">
-                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Step name</span>
-                            <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.title} name="step_name" required />
+                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">description</span>
+                            <textarea className="min-h-24 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.description ?? ""} name="step_description" required />
                           </label>
                           <label className="block">
-                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Step order</span>
+                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">order_by</span>
                             <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={stepOrderLabel(step, index)} name="step_order" type="number" />
                           </label>
-                          <label className="block lg:col-span-2">
-                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Description</span>
-                            <textarea className="min-h-24 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.description ?? ""} name="step_description" />
-                          </label>
                           <label className="block">
-                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">System prompt</span>
+                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_system_prompt</span>
                             <textarea className="min-h-36 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.systemPrompt ?? ""} name="system_prompt" />
                           </label>
                           <label className="block">
-                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">User prompt</span>
+                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_user_prompt</span>
                             <textarea className="min-h-36 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.userPrompt ?? ""} name="user_prompt" />
                           </label>
                           <label className="block lg:max-w-xs">
-                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Temperature</span>
+                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_temperature</span>
                             <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.temperature ?? ""} name="temperature" step="0.1" type="number" />
                           </label>
                           <div className="flex flex-wrap items-end gap-3">
@@ -345,13 +329,16 @@ export default function HumorFlavorStudio({
               <HumorFlavorTestConsole
                 apiBaseUrl={apiBaseUrl}
                 flavorId={selectedFlavor.id}
-                flavorName={selectedFlavor.name}
+                flavorName={selectedFlavor.label}
                 flavorParamKey={flavorParamKey}
                 images={testImages}
               />
 
               <section className="rounded-[2rem] border border-[color:var(--border)] bg-[var(--surface)] p-6">
-                {panelTitle("Recent Captions", `Latest outputs for ${selectedFlavor.name}`, "Reads the most recent captions we can associate back to this flavor from the existing caption tables.")}
+                {panelTitle("Recent Captions", `Latest outputs for ${selectedFlavor.label}`, "Reads the most recent captions we can associate back to this flavor from the existing caption tables.")}
+                <div className="mt-4 rounded-[1.2rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4 text-sm leading-7 text-[var(--muted-foreground)]">
+                  Use this panel after testing to confirm that the selected flavor is producing the tone and caption structure you expect.
+                </div>
                 <div className="mt-5 space-y-3">
                   {selectedCaptions.length > 0 ? (
                     selectedCaptions.map((caption) => (

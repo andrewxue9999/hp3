@@ -5,17 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdminAccess } from "@/lib/admin/auth";
 import { asNumber, asString, type GenericRow } from "@/lib/admin/data";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getFlavorFieldKey, getFlavorForeignKey, getFlavorOrderField } from "@/lib/humor-flavors";
-
-const FLAVOR_NAME_KEYS = ["name", "title", "label"];
-const FLAVOR_SLUG_KEYS = ["slug", "code", "key"];
-const FLAVOR_DESCRIPTION_KEYS = ["description", "summary", "notes"];
-const FLAVOR_ACTIVE_KEYS = ["is_active", "is_enabled", "enabled", "active"];
-const STEP_NAME_KEYS = ["name", "title", "label"];
-const STEP_DESCRIPTION_KEYS = ["description", "summary", "notes"];
-const STEP_SYSTEM_PROMPT_KEYS = ["system_prompt", "prompt"];
-const STEP_USER_PROMPT_KEYS = ["user_prompt", "instructions"];
-const STEP_TEMPERATURE_KEYS = ["temperature"];
+import { getFlavorForeignKey, getFlavorOrderField } from "@/lib/humor-flavors";
 const TIMESTAMP_KEYS = [
   "created_datetime_utc",
   "modified_datetime_utc",
@@ -24,6 +14,16 @@ const TIMESTAMP_KEYS = [
   "created_at",
   "updated_at",
 ];
+
+function isRedirectLikeError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof error.digest === "string" &&
+    error.digest.includes("NEXT_REDIRECT")
+  );
+}
 
 function buildRedirect(message: string, status: "success" | "error", flavorId?: string | null) {
   const params = new URLSearchParams({ status, message });
@@ -34,37 +34,9 @@ function buildRedirect(message: string, status: "success" | "error", flavorId?: 
   redirect(`/admin/humor-flavors?${params.toString()}`);
 }
 
-function isMissingColumnError(error: { code?: string; message?: string }) {
-  return error.code === "42703" || error.code === "PGRST204" || error.message?.includes("column") === true;
-}
-
-async function mutateWithColumnFallback(
-  operation: () => PromiseLike<{ error: { code?: string; message: string } | null }>,
-  payload: Record<string, unknown>,
-  fallbackKeys: string[],
-) {
-  let response = await operation();
-  const remainingFallbacks = [...fallbackKeys];
-
-  while (response.error && isMissingColumnError(response.error) && remainingFallbacks.length > 0) {
-    const key = remainingFallbacks.shift();
-    if (!key) break;
-    delete payload[key];
-    response = await operation();
-  }
-
-  if (response.error) {
-    throw new Error(response.error.message);
-  }
-}
-
 function setValueIfPresent(payload: Record<string, unknown>, key: string, value: unknown) {
   if (value === undefined) return;
   payload[key] = value;
-}
-
-function parseCheckbox(formData: FormData, key: string) {
-  return formData.get(key) === "on";
 }
 
 function parseRequiredText(formData: FormData, key: string, label: string) {
@@ -93,20 +65,11 @@ function parseOptionalNumber(formData: FormData, key: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function touchTimestamps(payload: Record<string, unknown>, sample: GenericRow | null, mode: "create" | "update") {
-  const now = new Date().toISOString();
+function touchTimestamps(payload: Record<string, unknown>, sample: GenericRow | null) {
   const availableKeys = new Set(sample ? Object.keys(sample) : TIMESTAMP_KEYS);
-
   for (const key of TIMESTAMP_KEYS) {
     if (!availableKeys.has(key)) continue;
-
-    if (mode === "create" && (key === "created_datetime_utc" || key === "created_at_utc" || key === "created_at")) {
-      payload[key] = now;
-    }
-
-    if (key === "modified_datetime_utc" || key === "modified_at_utc" || key === "updated_at") {
-      payload[key] = now;
-    }
+    delete payload[key];
   }
 }
 
@@ -123,74 +86,73 @@ async function loadSamples() {
   };
 }
 
-function buildFlavorPayload(formData: FormData, sample: GenericRow | null, mode: "create" | "update") {
+function buildFlavorPayload(formData: FormData, sample: GenericRow | null, mode: "create" | "update", actorProfileId: string) {
   const payload: Record<string, unknown> = {};
-  const nameKey = getFlavorFieldKey(sample, FLAVOR_NAME_KEYS, "name");
-  const slugKey = getFlavorFieldKey(sample, FLAVOR_SLUG_KEYS, "slug");
-  const descriptionKey = getFlavorFieldKey(sample, FLAVOR_DESCRIPTION_KEYS, "description");
-  const activeKey = getFlavorFieldKey(sample, FLAVOR_ACTIVE_KEYS, "is_active");
+  setValueIfPresent(payload, "slug", parseRequiredText(formData, "slug", "Flavor slug"));
+  setValueIfPresent(payload, "description", parseOptionalText(formData, "description"));
+  payload.modified_by_user_id = actorProfileId;
+  if (mode === "create") {
+    payload.created_by_user_id = actorProfileId;
+  }
+  touchTimestamps(payload, sample);
 
-  setValueIfPresent(payload, nameKey, parseRequiredText(formData, "name", "Flavor name"));
-  setValueIfPresent(payload, slugKey, parseOptionalText(formData, "slug"));
-  setValueIfPresent(payload, descriptionKey, parseOptionalText(formData, "description"));
-  setValueIfPresent(payload, activeKey, parseCheckbox(formData, "is_active"));
-  touchTimestamps(payload, sample, mode);
-
-  return {
-    payload,
-    fallbackKeys: [slugKey, descriptionKey, activeKey].filter((key) => !(sample && key in sample)),
-  };
+  return payload;
 }
 
-function buildStepPayload(formData: FormData, stepSample: GenericRow | null, flavorId: string, mode: "create" | "update") {
+function buildStepPayload(
+  formData: FormData,
+  stepSample: GenericRow | null,
+  flavorId: string,
+  mode: "create" | "update",
+  actorProfileId: string,
+) {
   const payload: Record<string, unknown> = {};
-  const nameKey = getFlavorFieldKey(stepSample, STEP_NAME_KEYS, "name");
-  const descriptionKey = getFlavorFieldKey(stepSample, STEP_DESCRIPTION_KEYS, "description");
-  const systemPromptKey = getFlavorFieldKey(stepSample, STEP_SYSTEM_PROMPT_KEYS, "system_prompt");
-  const userPromptKey = getFlavorFieldKey(stepSample, STEP_USER_PROMPT_KEYS, "user_prompt");
-  const temperatureKey = getFlavorFieldKey(stepSample, STEP_TEMPERATURE_KEYS, "temperature");
-  const orderKey = getFlavorOrderField(stepSample);
-  const flavorKey = getFlavorForeignKey(stepSample);
+  const orderKey = getFlavorOrderField();
+  const flavorKey = getFlavorForeignKey();
 
   setValueIfPresent(payload, flavorKey, flavorId);
-  setValueIfPresent(payload, nameKey, parseRequiredText(formData, "step_name", "Step name"));
-  setValueIfPresent(payload, descriptionKey, parseOptionalText(formData, "step_description"));
-  setValueIfPresent(payload, systemPromptKey, parseOptionalText(formData, "system_prompt"));
-  setValueIfPresent(payload, userPromptKey, parseOptionalText(formData, "user_prompt"));
-  setValueIfPresent(payload, temperatureKey, parseOptionalNumber(formData, "temperature"));
+  setValueIfPresent(payload, "description", parseOptionalText(formData, "step_description"));
+  setValueIfPresent(payload, "llm_system_prompt", parseOptionalText(formData, "system_prompt"));
+  setValueIfPresent(payload, "llm_user_prompt", parseOptionalText(formData, "user_prompt"));
+  setValueIfPresent(payload, "llm_temperature", parseOptionalNumber(formData, "temperature"));
 
   const stepOrder = parseOptionalNumber(formData, "step_order");
   if (stepOrder !== null) {
     payload[orderKey] = stepOrder;
   }
 
-  touchTimestamps(payload, stepSample, mode);
+  payload.modified_by_user_id = actorProfileId;
+  if (mode === "create") {
+    payload.created_by_user_id = actorProfileId;
+  }
+  touchTimestamps(payload, stepSample);
 
-  return {
-    payload,
-    fallbackKeys: [descriptionKey, systemPromptKey, userPromptKey, temperatureKey, orderKey, flavorKey].filter(
-      (key) => !(stepSample && key in stepSample),
-    ),
-  };
+  return payload;
 }
 
 export async function createFlavorAction(formData: FormData) {
-  await requireAdminAccess();
+  const { profile } = await requireAdminAccess();
 
   try {
     const admin = createAdminClient();
     const { flavorSample } = await loadSamples();
-    const { payload, fallbackKeys } = buildFlavorPayload(formData, flavorSample, "create");
-    await mutateWithColumnFallback(() => admin.from("humor_flavors").insert(payload), payload, fallbackKeys);
+    const payload = buildFlavorPayload(formData, flavorSample, "create", String(profile.id));
+    const { error } = await admin.from("humor_flavors").insert(payload);
+    if (error) {
+      throw new Error(error.message);
+    }
     revalidatePath("/admin/humor-flavors");
     buildRedirect("Humor flavor created.", "success");
   } catch (error) {
+    if (isRedirectLikeError(error)) {
+      throw error;
+    }
     buildRedirect(error instanceof Error ? error.message : "Unable to create humor flavor.", "error");
   }
 }
 
 export async function updateFlavorAction(formData: FormData) {
-  await requireAdminAccess();
+  const { profile } = await requireAdminAccess();
 
   const flavorId = parseRequiredText(formData, "flavor_id", "Flavor");
 
@@ -202,15 +164,17 @@ export async function updateFlavorAction(formData: FormData) {
     }
 
     const flavorSample = (((flavorRows as GenericRow[])[0] ?? null) as GenericRow | null);
-    const { payload, fallbackKeys } = buildFlavorPayload(formData, flavorSample, "update");
-    await mutateWithColumnFallback(
-      () => admin.from("humor_flavors").update(payload).eq("id", flavorId),
-      payload,
-      fallbackKeys,
-    );
+    const payload = buildFlavorPayload(formData, flavorSample, "update", String(profile.id));
+    const { error } = await admin.from("humor_flavors").update(payload).eq("id", flavorId);
+    if (error) {
+      throw new Error(error.message);
+    }
     revalidatePath("/admin/humor-flavors");
     buildRedirect("Humor flavor updated.", "success", flavorId);
   } catch (error) {
+    if (isRedirectLikeError(error)) {
+      throw error;
+    }
     buildRedirect(error instanceof Error ? error.message : "Unable to update humor flavor.", "error", flavorId);
   }
 }
@@ -222,8 +186,7 @@ export async function deleteFlavorAction(formData: FormData) {
   const admin = createAdminClient();
 
   try {
-    const { stepSample } = await loadSamples();
-    const flavorKey = getFlavorForeignKey(stepSample);
+    const flavorKey = getFlavorForeignKey();
     const { error: stepError } = await admin.from("humor_flavor_steps").delete().eq(flavorKey, flavorId);
     if (stepError) {
       throw new Error(stepError.message);
@@ -237,29 +200,38 @@ export async function deleteFlavorAction(formData: FormData) {
     revalidatePath("/admin/humor-flavors");
     buildRedirect("Humor flavor deleted.", "success");
   } catch (error) {
+    if (isRedirectLikeError(error)) {
+      throw error;
+    }
     buildRedirect(error instanceof Error ? error.message : "Unable to delete humor flavor.", "error", flavorId);
   }
 }
 
 export async function createStepAction(formData: FormData) {
-  await requireAdminAccess();
+  const { profile } = await requireAdminAccess();
 
   const flavorId = parseRequiredText(formData, "flavor_id", "Flavor");
 
   try {
     const admin = createAdminClient();
     const { stepSample } = await loadSamples();
-    const { payload, fallbackKeys } = buildStepPayload(formData, stepSample, flavorId, "create");
-    await mutateWithColumnFallback(() => admin.from("humor_flavor_steps").insert(payload), payload, fallbackKeys);
+    const payload = buildStepPayload(formData, stepSample, flavorId, "create", String(profile.id));
+    const { error } = await admin.from("humor_flavor_steps").insert(payload);
+    if (error) {
+      throw new Error(error.message);
+    }
     revalidatePath("/admin/humor-flavors");
     buildRedirect("Humor flavor step created.", "success", flavorId);
   } catch (error) {
+    if (isRedirectLikeError(error)) {
+      throw error;
+    }
     buildRedirect(error instanceof Error ? error.message : "Unable to create step.", "error", flavorId);
   }
 }
 
 export async function updateStepAction(formData: FormData) {
-  await requireAdminAccess();
+  const { profile } = await requireAdminAccess();
 
   const flavorId = parseRequiredText(formData, "flavor_id", "Flavor");
   const stepId = parseRequiredText(formData, "step_id", "Step");
@@ -272,15 +244,17 @@ export async function updateStepAction(formData: FormData) {
     }
 
     const stepSample = (((stepRows as GenericRow[])[0] ?? null) as GenericRow | null);
-    const { payload, fallbackKeys } = buildStepPayload(formData, stepSample, flavorId, "update");
-    await mutateWithColumnFallback(
-      () => admin.from("humor_flavor_steps").update(payload).eq("id", stepId),
-      payload,
-      fallbackKeys,
-    );
+    const payload = buildStepPayload(formData, stepSample, flavorId, "update", String(profile.id));
+    const { error } = await admin.from("humor_flavor_steps").update(payload).eq("id", stepId);
+    if (error) {
+      throw new Error(error.message);
+    }
     revalidatePath("/admin/humor-flavors");
     buildRedirect("Humor flavor step updated.", "success", flavorId);
   } catch (error) {
+    if (isRedirectLikeError(error)) {
+      throw error;
+    }
     buildRedirect(error instanceof Error ? error.message : "Unable to update step.", "error", flavorId);
   }
 }
@@ -301,14 +275,16 @@ export async function deleteStepAction(formData: FormData) {
     revalidatePath("/admin/humor-flavors");
     buildRedirect("Humor flavor step deleted.", "success", flavorId);
   } catch (error) {
+    if (isRedirectLikeError(error)) {
+      throw error;
+    }
     buildRedirect(error instanceof Error ? error.message : "Unable to delete step.", "error", flavorId);
   }
 }
 
 async function loadFlavorStepRows(flavorId: string) {
   const admin = createAdminClient();
-  const { stepSample } = await loadSamples();
-  const flavorKey = getFlavorForeignKey(stepSample);
+  const flavorKey = getFlavorForeignKey();
   const { data, error } = await admin.from("humor_flavor_steps").select("*").eq(flavorKey, flavorId);
   if (error) {
     throw new Error(error.message);
@@ -331,7 +307,7 @@ export async function reorderStepAction(formData: FormData) {
   try {
     const admin = createAdminClient();
     const rows = await loadFlavorStepRows(flavorId);
-    const orderKey = getFlavorOrderField(rows[0] ?? null);
+    const orderKey = getFlavorOrderField();
     const ordered = rows.sort((left, right) => {
       const leftValue = asNumber(left[orderKey]) ?? Number.MAX_SAFE_INTEGER;
       const rightValue = asNumber(right[orderKey]) ?? Number.MAX_SAFE_INTEGER;
@@ -363,6 +339,9 @@ export async function reorderStepAction(formData: FormData) {
     revalidatePath("/admin/humor-flavors");
     buildRedirect("Step order updated.", "success", flavorId);
   } catch (error) {
+    if (isRedirectLikeError(error)) {
+      throw error;
+    }
     buildRedirect(error instanceof Error ? error.message : "Unable to reorder step.", "error", flavorId);
   }
 }
@@ -375,7 +354,7 @@ export async function normalizeStepOrderAction(formData: FormData) {
   try {
     const admin = createAdminClient();
     const rows = await loadFlavorStepRows(flavorId);
-    const orderKey = getFlavorOrderField(rows[0] ?? null);
+    const orderKey = getFlavorOrderField();
     const ordered = rows.sort((left, right) => {
       const leftValue = asNumber(left[orderKey]) ?? Number.MAX_SAFE_INTEGER;
       const rightValue = asNumber(right[orderKey]) ?? Number.MAX_SAFE_INTEGER;
@@ -395,6 +374,9 @@ export async function normalizeStepOrderAction(formData: FormData) {
     revalidatePath("/admin/humor-flavors");
     buildRedirect("Step order normalized.", "success", flavorId);
   } catch (error) {
+    if (isRedirectLikeError(error)) {
+      throw error;
+    }
     buildRedirect(error instanceof Error ? error.message : "Unable to normalize steps.", "error", flavorId);
   }
 }

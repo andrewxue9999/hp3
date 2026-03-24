@@ -4,7 +4,6 @@ import { getCaptionsForFlavor, getStepsForFlavor, loadHumorFlavorManagerData } f
 
 export default async function AdminDashboardPage() {
   const { flavors, steps, images, recentCaptions } = await loadHumorFlavorManagerData();
-  const activeFlavors = flavors.filter((flavor) => flavor.isActive !== false);
   const commonUseImages = images.filter((image) => image.isCommonUse === true);
   const latestFlavor = flavors[0] ?? null;
   const latestFlavorSteps = latestFlavor ? getStepsForFlavor(steps, latestFlavor.id) : [];
@@ -36,8 +35,8 @@ export default async function AdminDashboardPage() {
               <p className="mt-2 text-3xl font-semibold text-[var(--foreground)]">{steps.length}</p>
             </div>
             <div className="rounded-[1.5rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Active Flavors</p>
-              <p className="mt-2 text-3xl font-semibold text-[var(--foreground)]">{activeFlavors.length}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Recent Captions</p>
+              <p className="mt-2 text-3xl font-semibold text-[var(--foreground)]">{recentCaptions.length}</p>
             </div>
             <div className="rounded-[1.5rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Test Images</p>
@@ -70,6 +69,13 @@ export default async function AdminDashboardPage() {
             testing. Use <strong className="text-[var(--foreground)]">Flavor Steps</strong> for fast inline step edits
             across all flavors.
           </div>
+          <div className="mt-4 rounded-[1.4rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4 text-sm leading-7 text-[var(--muted-foreground)]">
+            <p className="font-semibold text-[var(--foreground)]">Recommended flow</p>
+            <p className="mt-2">1. Create a flavor with a unique `slug` and a short `description`.</p>
+            <p>2. Add ordered steps with `description`, `order_by`, and the two LLM prompt fields.</p>
+            <p>3. Reorder or normalize the chain until the steps read correctly from top to bottom.</p>
+            <p>4. Run the image test set from the `Humor Flavors` tab and review recent captions.</p>
+          </div>
         </section>
 
         <section className="rounded-[2rem] border border-[color:var(--border)] bg-[var(--surface)] p-6">
@@ -78,7 +84,7 @@ export default async function AdminDashboardPage() {
           {latestFlavor ? (
             <div className="mt-5 space-y-4">
               <div className="rounded-[1.4rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4">
-                <p className="text-lg font-semibold text-[var(--foreground)]">{latestFlavor.name}</p>
+                <p className="text-lg font-semibold text-[var(--foreground)]">{latestFlavor.label}</p>
                 <p className="mt-2 text-sm text-[var(--muted-foreground)]">
                   {latestFlavor.description ?? "No description saved."}
                 </p>
@@ -93,10 +99,8 @@ export default async function AdminDashboardPage() {
                   <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">{latestFlavorCaptions.length}</p>
                 </div>
                 <div className="rounded-[1.2rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Status</p>
-                  <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-                    {latestFlavor.isActive === false ? "Paused" : "Active"}
-                  </p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Slug</p>
+                  <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">{latestFlavor.slug ?? "None"}</p>
                 </div>
               </div>
             </div>
@@ -112,7 +116,7 @@ export default async function AdminDashboardPage() {
         <section className="rounded-[2rem] border border-[color:var(--border)] bg-[var(--surface)] p-6">
           <p className="text-xs uppercase tracking-[0.26em] text-[var(--muted-foreground)]">Recent Captions</p>
           <h3 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-            Latest outputs for {latestFlavor.name}
+            Latest outputs for {latestFlavor.label}
           </h3>
           <div className="mt-5 space-y-3">
             {latestFlavorCaptions.length > 0 ? (

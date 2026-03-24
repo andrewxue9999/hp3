@@ -128,7 +128,13 @@ async function uploadImageIfPresent(formData: FormData) {
   return data.publicUrl;
 }
 
-async function buildPayload(slug: string, formData: FormData, mode: "create" | "update", recordId?: string) {
+async function buildPayload(
+  slug: string,
+  formData: FormData,
+  mode: "create" | "update",
+  actorProfileId: string,
+  recordId?: string,
+) {
   const config = getAdminTableConfig(slug);
   if (!config) {
     throw new Error("Unknown admin resource.");
@@ -158,26 +164,9 @@ async function buildPayload(slug: string, formData: FormData, mode: "create" | "
     }
   }
 
-  const now = new Date().toISOString();
-  const timestampKeys = new Set([
-    "created_datetime_utc",
-    "modified_datetime_utc",
-    "created_at_utc",
-    "modified_at_utc",
-    "created_at",
-    "updated_at",
-  ]);
-
-  for (const key of referenceRow ? Object.keys(referenceRow) : timestampKeys) {
-    if (!timestampKeys.has(key)) continue;
-
-    if (mode === "create" && (key === "created_datetime_utc" || key === "created_at_utc" || key === "created_at")) {
-      payload[key] = now;
-    }
-
-    if (key === "modified_datetime_utc" || key === "modified_at_utc" || key === "updated_at") {
-      payload[key] = now;
-    }
+  payload.modified_by_user_id = actorProfileId;
+  if (mode === "create") {
+    payload.created_by_user_id = actorProfileId;
   }
 
   return { payload, resolvedTable };
@@ -188,7 +177,7 @@ function getResourcePath(slug: string) {
 }
 
 export async function createRecordAction(formData: FormData) {
-  await requireSuperadmin();
+  const { profile } = await requireSuperadmin();
 
   const slug = asString(formData.get("table_slug"));
   const config = slug ? getAdminTableConfig(slug) : null;
@@ -202,7 +191,7 @@ export async function createRecordAction(formData: FormData) {
 
   try {
     const admin = createAdminClient();
-    const { payload, resolvedTable } = await buildPayload(slug, formData, "create");
+    const { payload, resolvedTable } = await buildPayload(slug, formData, "create", String(profile.id));
     const { error } = await admin.from(resolvedTable).insert(payload);
     if (error) {
       buildRedirect(getResourcePath(slug), "error", error.message);
@@ -225,7 +214,7 @@ export async function createRecordAction(formData: FormData) {
 }
 
 export async function updateRecordAction(formData: FormData) {
-  await requireSuperadmin();
+  const { profile } = await requireSuperadmin();
 
   const slug = asString(formData.get("table_slug"));
   const recordId = asString(formData.get("record_id"));
@@ -240,7 +229,7 @@ export async function updateRecordAction(formData: FormData) {
 
   try {
     const admin = createAdminClient();
-    const { payload, resolvedTable } = await buildPayload(slug, formData, "update", recordId);
+    const { payload, resolvedTable } = await buildPayload(slug, formData, "update", String(profile.id), recordId);
     const { error } = await admin.from(resolvedTable).update(payload).eq("id", recordId);
     if (error) {
       buildRedirect(getResourcePath(slug), "error", error.message);

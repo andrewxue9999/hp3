@@ -8,10 +8,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const DEFAULT_IMAGE_FIELDS = ["url", "description", "is_common_use", "user_id"];
 const BOOLEAN_FIELDS = new Set(["is_common_use"]);
-const TIMESTAMP_FIELDS = {
-  created: ["created_datetime_utc", "created_at_utc", "created_at"],
-  modified: ["modified_datetime_utc", "modified_at_utc", "updated_at"],
-};
 
 async function loadReferenceImage() {
   const admin = createAdminClient();
@@ -50,23 +46,6 @@ function buildPayload(formData: FormData, reference: GenericRow | null, mode: "c
     payload[field] = trimmed;
   }
 
-  const now = new Date().toISOString();
-  if (reference) {
-    for (const key of TIMESTAMP_FIELDS.modified) {
-      if (key in reference) {
-        payload[key] = now;
-      }
-    }
-
-    if (mode === "create") {
-      for (const key of TIMESTAMP_FIELDS.created) {
-        if (key in reference) {
-          payload[key] = now;
-        }
-      }
-    }
-  }
-
   return payload;
 }
 
@@ -80,11 +59,13 @@ function toRedirect(path: string, status: string, message: string) {
 }
 
 export async function createImageAction(formData: FormData) {
-  await requireSuperadmin();
+  const { profile } = await requireSuperadmin();
 
   const admin = createAdminClient();
   const reference = await loadReferenceImage();
   const payload = buildPayload(formData, reference, "create");
+  payload.created_by_user_id = String(profile.id);
+  payload.modified_by_user_id = String(profile.id);
 
   const { error } = await admin.from("images").insert(payload);
   if (error) {
@@ -97,7 +78,7 @@ export async function createImageAction(formData: FormData) {
 }
 
 export async function updateImageAction(formData: FormData) {
-  await requireSuperadmin();
+  const { profile } = await requireSuperadmin();
 
   const imageId = formData.get("image_id");
   if (typeof imageId !== "string" || imageId.trim().length === 0) {
@@ -116,6 +97,7 @@ export async function updateImageAction(formData: FormData) {
   }
 
   const payload = buildPayload(formData, currentImage, "update");
+  payload.modified_by_user_id = String(profile.id);
   const { error } = await admin.from("images").update(payload).eq("id", imageId);
   if (error) {
     toRedirect("/admin/images", "error", error.message);

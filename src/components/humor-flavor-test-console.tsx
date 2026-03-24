@@ -206,6 +206,10 @@ export default function HumorFlavorTestConsole({
         })}
       </div>
 
+      <div className="mt-4 rounded-[1.2rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4 text-sm leading-7 text-[var(--muted-foreground)]">
+        Select one or more images, run the flavor, then compare the returned captions against the ordered steps you wrote above. If the output is off, revise the prompts or the `order_by` sequence and test again.
+      </div>
+
       {error ? (
         <p className="mt-4 rounded-[1.4rem] border border-[color:var(--danger)] bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--foreground)]">
           {error}

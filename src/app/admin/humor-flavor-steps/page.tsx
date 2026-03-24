@@ -21,7 +21,10 @@ export default async function AdminHumorFlavorStepsPage({ searchParams }: PagePr
   const notice = typeof resolvedParams.message === "string" ? resolvedParams.message : null;
   const status =
     resolvedParams.status === "success" || resolvedParams.status === "error" ? resolvedParams.status : null;
+  const selectedFlavorId = typeof resolvedParams.flavor === "string" ? resolvedParams.flavor : null;
   const { flavors, steps } = await loadHumorFlavorManagerData();
+  const selectedFlavor = flavors.find((flavor) => flavor.id === selectedFlavorId) ?? flavors[0] ?? null;
+  const visibleFlavors = selectedFlavor ? [selectedFlavor] : flavors;
 
   return (
     <div className="space-y-6">
@@ -63,8 +66,52 @@ export default async function AdminHumorFlavorStepsPage({ searchParams }: PagePr
         </section>
       ) : null}
 
+      <section className="rounded-[2rem] border border-[color:var(--border)] bg-[var(--surface)] p-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.26em] text-[var(--muted-foreground)]">Flavor Filter</p>
+            <h3 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">Select one flavor at a time</h3>
+            <p className="mt-2 text-sm leading-7 text-[var(--muted-foreground)]">
+              The `Flavor Steps` tab now keeps the selected flavor in the URL so you can move between tabs without losing context.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Link
+              className={`rounded-full px-5 py-3 text-sm font-semibold ${
+                selectedFlavorId
+                  ? "border border-[color:var(--border-strong)] text-[var(--foreground)]"
+                  : "bg-[var(--accent)] text-[var(--accent-foreground)]"
+              }`}
+              href="/admin/humor-flavor-steps"
+            >
+              Show All
+            </Link>
+            {flavors.map((flavor) => {
+              const active = selectedFlavor?.id === flavor.id;
+              return (
+                <Link
+                  className={`rounded-full px-5 py-3 text-sm font-semibold ${
+                    active
+                      ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
+                      : "border border-[color:var(--border-strong)] text-[var(--foreground)]"
+                  }`}
+                  href={`/admin/humor-flavor-steps?flavor=${encodeURIComponent(flavor.id)}`}
+                  key={flavor.id}
+                >
+                  {flavor.slug ?? flavor.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+        <div className="mt-4 rounded-[1.2rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4 text-sm leading-7 text-[var(--muted-foreground)]">
+          Pick a flavor here, edit its steps inline, then use `Open In Editor` if you want to run the image test set or review recent captions for that same flavor.
+        </div>
+      </section>
+
       <section className="space-y-6">
-        {flavors.map((flavor) => {
+        {visibleFlavors.map((flavor) => {
           const flavorSteps = getStepsForFlavor(steps, flavor.id);
 
           return (
@@ -74,7 +121,7 @@ export default async function AdminHumorFlavorStepsPage({ searchParams }: PagePr
                   <p className="text-xs uppercase tracking-[0.24em] text-[var(--muted-foreground)]">
                     {flavor.slug ?? "No slug"}
                   </p>
-                  <h3 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">{flavor.name}</h3>
+                  <h3 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">{flavor.label}</h3>
                   <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--muted-foreground)]">
                     {flavor.description ?? "No flavor description saved."}
                   </p>
@@ -90,28 +137,27 @@ export default async function AdminHumorFlavorStepsPage({ searchParams }: PagePr
 
               <form action={createStepAction} className="mt-5 grid gap-4 rounded-[1.5rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4 lg:grid-cols-2">
                 <input name="flavor_id" type="hidden" value={flavor.id} />
+                <div className="lg:col-span-2 rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] p-4 text-sm leading-7 text-[var(--muted-foreground)]">
+                  Add the next step in the chain here. `order_by` controls execution order. Lower numbers run earlier.
+                </div>
                 <label className="block">
-                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Step name</span>
-                  <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="step_name" required />
+                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">description</span>
+                  <textarea className="min-h-24 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="step_description" required />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Step order</span>
+                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">order_by</span>
                   <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={flavorSteps.length + 1} name="step_order" type="number" />
                 </label>
-                <label className="block lg:col-span-2">
-                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Description</span>
-                  <textarea className="min-h-24 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="step_description" />
-                </label>
                 <label className="block">
-                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">System prompt</span>
+                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_system_prompt</span>
                   <textarea className="min-h-28 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="system_prompt" />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">User prompt</span>
+                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_user_prompt</span>
                   <textarea className="min-h-28 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="user_prompt" />
                 </label>
                 <label className="block lg:max-w-xs">
-                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Temperature</span>
+                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_temperature</span>
                   <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue="0.8" name="temperature" step="0.1" type="number" />
                 </label>
                 <div className="flex items-end">
@@ -149,27 +195,23 @@ export default async function AdminHumorFlavorStepsPage({ searchParams }: PagePr
                         <input name="flavor_id" type="hidden" value={flavor.id} />
                         <input name="step_id" type="hidden" value={step.id} />
                         <label className="block">
-                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Step name</span>
-                          <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.title} name="step_name" required />
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">description</span>
+                          <textarea className="min-h-24 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.description ?? ""} name="step_description" required />
                         </label>
                         <label className="block">
-                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Step order</span>
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">order_by</span>
                           <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={stepOrderLabel(step.stepOrder, index)} name="step_order" type="number" />
                         </label>
-                        <label className="block lg:col-span-2">
-                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Description</span>
-                          <textarea className="min-h-24 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.description ?? ""} name="step_description" />
-                        </label>
                         <label className="block">
-                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">System prompt</span>
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_system_prompt</span>
                           <textarea className="min-h-28 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.systemPrompt ?? ""} name="system_prompt" />
                         </label>
                         <label className="block">
-                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">User prompt</span>
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_user_prompt</span>
                           <textarea className="min-h-28 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.userPrompt ?? ""} name="user_prompt" />
                         </label>
                         <label className="block lg:max-w-xs">
-                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Temperature</span>
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_temperature</span>
                           <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.temperature ?? ""} name="temperature" step="0.1" type="number" />
                         </label>
                         <div className="flex items-end">

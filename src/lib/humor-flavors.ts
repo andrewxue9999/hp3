@@ -5,10 +5,9 @@ import { asBoolean, asNumber, asString, getCaptionText, getImageUrl, getRowDate,
 
 export type HumorFlavorRecord = GenericRow & {
   id: string;
-  name: string;
+  label: string;
   slug: string | null;
   description: string | null;
-  isActive: boolean | null;
 };
 
 export type HumorFlavorStepRecord = GenericRow & {
@@ -45,21 +44,8 @@ export type HumorFlavorManagerData = {
   recentCaptions: HumorFlavorCaptionRecord[];
 };
 
-const FLAVOR_NAME_KEYS = ["name", "title", "label"];
-const FLAVOR_SLUG_KEYS = ["slug", "code", "key"];
-const FLAVOR_DESCRIPTION_KEYS = ["description", "summary", "notes"];
-const FLAVOR_ACTIVE_KEYS = ["is_active", "is_enabled", "enabled", "active"];
-const STEP_FLAVOR_ID_KEYS = ["humor_flavor_id", "flavor_id"];
-const STEP_NAME_KEYS = ["name", "title", "label"];
-const STEP_DESCRIPTION_KEYS = ["description", "summary", "notes"];
-const STEP_ORDER_KEYS = ["step_order", "sort_order", "order_index", "position", "sequence_number", "sequence", "step_number"];
-const STEP_SYSTEM_PROMPT_KEYS = ["system_prompt", "prompt"];
-const STEP_USER_PROMPT_KEYS = ["user_prompt", "instructions"];
-const STEP_TEMPERATURE_KEYS = ["temperature"];
-const REQUEST_FLAVOR_ID_KEYS = ["humor_flavor_id", "flavor_id"];
 const REQUEST_ID_KEYS = ["id", "caption_request_id"];
 const CAPTION_REQUEST_ID_KEYS = ["caption_request_id", "request_id"];
-const CAPTION_FLAVOR_ID_KEYS = ["humor_flavor_id", "flavor_id"];
 const IMAGE_COMMON_USE_KEYS = ["is_common_use", "common_use", "is_public"];
 const IMAGE_DESCRIPTION_KEYS = ["description", "alt_text", "title"];
 
@@ -81,15 +67,6 @@ function pickBoolean(row: GenericRow, keys: string[]) {
   return null;
 }
 
-function pickNumber(row: GenericRow, keys: string[]) {
-  for (const key of keys) {
-    const value = asNumber(row[key]);
-    if (value !== null) return value;
-  }
-
-  return null;
-}
-
 function normalizeFlavor(row: GenericRow): HumorFlavorRecord | null {
   const id = getRowId(row);
   if (!id) return null;
@@ -97,10 +74,9 @@ function normalizeFlavor(row: GenericRow): HumorFlavorRecord | null {
   return {
     ...row,
     id,
-    name: pickString(row, FLAVOR_NAME_KEYS) ?? `Flavor ${id}`,
-    slug: pickString(row, FLAVOR_SLUG_KEYS),
-    description: pickString(row, FLAVOR_DESCRIPTION_KEYS),
-    isActive: pickBoolean(row, FLAVOR_ACTIVE_KEYS),
+    label: asString(row.slug) ?? asString(row.description) ?? `Flavor ${id}`,
+    slug: asString(row.slug),
+    description: asString(row.description),
   };
 }
 
@@ -108,17 +84,17 @@ function normalizeStep(row: GenericRow): HumorFlavorStepRecord | null {
   const id = getRowId(row);
   if (!id) return null;
 
-  const stepOrder = pickNumber(row, STEP_ORDER_KEYS) ?? Number.MAX_SAFE_INTEGER;
+  const stepOrder = asNumber(row.order_by) ?? Number.MAX_SAFE_INTEGER;
   return {
     ...row,
     id,
-    flavorId: pickString(row, STEP_FLAVOR_ID_KEYS),
-    title: pickString(row, STEP_NAME_KEYS) ?? `Step ${id}`,
-    description: pickString(row, STEP_DESCRIPTION_KEYS),
-    systemPrompt: pickString(row, STEP_SYSTEM_PROMPT_KEYS),
-    userPrompt: pickString(row, STEP_USER_PROMPT_KEYS),
+    flavorId: asString(row.humor_flavor_id),
+    title: asString(row.description) ?? `Step ${id}`,
+    description: asString(row.description),
+    systemPrompt: asString(row.llm_system_prompt),
+    userPrompt: asString(row.llm_user_prompt),
     stepOrder,
-    temperature: pickNumber(row, STEP_TEMPERATURE_KEYS),
+    temperature: asNumber(row.llm_temperature),
   };
 }
 
@@ -155,7 +131,7 @@ function normalizeCaption(row: GenericRow, fallbackFlavorId: string | null, imag
 
   return {
     id,
-    flavorId: pickString(row, CAPTION_FLAVOR_ID_KEYS) ?? fallbackFlavorId,
+    flavorId: asString(row.humor_flavor_id) ?? fallbackFlavorId,
     text: getCaptionText(row),
     createdAt: getRowDate(row),
     imageId: pickString(row, ["image_id"]),
@@ -173,22 +149,12 @@ function sortSteps(steps: HumorFlavorStepRecord[]) {
   });
 }
 
-export function getFlavorFieldKey(sample: GenericRow | null, candidates: string[], fallback: string) {
-  if (sample) {
-    for (const key of candidates) {
-      if (key in sample) return key;
-    }
-  }
-
-  return fallback;
+export function getFlavorOrderField() {
+  return "order_by";
 }
 
-export function getFlavorOrderField(sample: GenericRow | null) {
-  return getFlavorFieldKey(sample, STEP_ORDER_KEYS, "step_order");
-}
-
-export function getFlavorForeignKey(sample: GenericRow | null) {
-  return getFlavorFieldKey(sample, STEP_FLAVOR_ID_KEYS, "humor_flavor_id");
+export function getFlavorForeignKey() {
+  return "humor_flavor_id";
 }
 
 export async function loadHumorFlavorManagerData(): Promise<HumorFlavorManagerData> {
@@ -249,7 +215,7 @@ export async function loadHumorFlavorManagerData(): Promise<HumorFlavorManagerDa
 
   const requestDerivedCaptions = [...captionsByRequestId.entries()].flatMap(([requestId, rows]) => {
     const request = requestById.get(requestId);
-    const flavorId = request ? pickString(request, REQUEST_FLAVOR_ID_KEYS) : null;
+    const flavorId = request ? asString(request.humor_flavor_id) : null;
     const imageId = request ? pickString(request, ["image_id"]) : null;
     const imageUrl = imageId ? imageUrlById.get(imageId) ?? null : null;
 
