@@ -1,77 +1,37 @@
-# HP2 Meme Admin
+# Humor Flavor Studio
 
-Protected admin dashboard and moderation surface for the existing Supabase meme database.
+Vercel-compatible Next.js admin app for managing humor flavors and humor flavor steps on the class Supabase database.
 
-## What Changed
+## What This App Does
 
-The app now includes a new `/admin` area with:
-
-- Google OAuth login through Supabase Auth
-- server-side authorization against `profiles.is_superadmin`
-- statistics dashboard for votes, ratios, contributor performance, and recent activity
-- image CRUD
-- read-only management views for captions, profiles, and Supabase auth users
-
-No RLS policies are modified by this codebase. Admin-only reads and mutations use the Supabase service role key on the server only.
+- Google OAuth sign-in with Supabase
+- Admin-only access when `profiles.is_superadmin = true` or `profiles.is_matrix_admin = true`
+- Create, update, and delete humor flavors
+- Create, update, delete, and reorder humor flavor steps
+- Read recent captions associated with a selected humor flavor
+- Test a humor flavor against an image test set using `https://api.almostcrackd.ai/pipeline/generate-captions`
+- Light mode, dark mode, and system theme support
 
 ## Environment Variables
 
-Create `.env.local` from `.env.example` and set:
+Required:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project-id>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
-# or use Supabase's newer server key format instead:
-SUPABASE_SECRET_KEY=<your-supabase-secret-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
 ```
 
-For Vercel, set the public variables plus one server admin key in Project Settings -> Environment Variables for Production and Preview.
+You can use `SUPABASE_SECRET_KEY` instead of `SUPABASE_SERVICE_ROLE_KEY` if your project uses the newer server key format.
 
-## Auth Flow
+Optional:
 
-- Google sign-in starts from the public home page.
-- Supabase redirects back to `/auth/callback`.
-- The callback exchanges the code for a session and redirects to `/admin`.
-- Every route under `/admin` checks:
-  1. the user is authenticated
-  2. the matching `profiles` row has `is_superadmin = true`
-
-Users who fail the second check are denied and sent back to `/`.
-
-## Bootstrap Superadmin
-
-The admin area requires:
-
-- one server admin key: `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY`
-- at least one profile with `is_superadmin = true`
-
-Use Supabase SQL Editor or any existing server-side admin access and run:
-
-```sql
-update public.profiles
-set is_superadmin = true
-where id in (
-  'YOUR-USER-UUID-HERE'
-);
+```bash
+NEXT_PUBLIC_ALMOSTCRACKD_API_URL=https://api.almostcrackd.ai
+NEXT_PUBLIC_HUMOR_FLAVOR_PARAM_KEY=humorFlavorId
 ```
 
-If you prefer identifying the profile by email first, look up the profile or auth user in Supabase Studio, copy the UUID, then run the update above.
-
-Important:
-
-- Do not expose `SUPABASE_SERVICE_ROLE_KEY` to client code.
-- Do not change RLS policies for this bootstrap.
-- This must be done once before first admin login.
-
-## Google OAuth Setup
-
-This app uses Supabase Auth with Google OAuth. The callback path is exactly:
-
-- Local: `http://localhost:3000/auth/callback`
-- Vercel: `https://<your-deployment-domain>/auth/callback`
-
-The code always initiates sign-in with `/auth/callback` and performs the final redirect to `/admin` server-side.
+`NEXT_PUBLIC_HUMOR_FLAVOR_PARAM_KEY` controls which request key the flavor test console sends to the REST API when calling `/pipeline/generate-captions`.
 
 ## Local Development
 
@@ -80,17 +40,23 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+## Verification
+
+```bash
+npm run lint
+npm run build
+```
+
+Current lint output is clean except for existing `@next/next/no-img-element` warnings on image-heavy views.
 
 ## Vercel Notes
 
 - Build command: `npm run build`
-- Output:
-  - Vercel uses the standard Next.js `.next` output directory
-  - local development in this OneDrive-backed workspace uses `.next-webpack` to avoid locked-cache issues
-- No secrets are hardcoded in the repo
-- The service role key is only read in server-only modules
-- Required Vercel environment variables:
-  - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - one of `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY`
+- Framework preset: Next.js
+- Deployment protection must be turned off so graders can access the site
+- Add the same environment variables in Vercel Project Settings
+- Google OAuth callback path must be `/auth/callback`
+
+## Repo / Deployment Setup
+
+This codebase is ready to push to a new GitHub repository and attach to a new Vercel project. Creating the remote GitHub repo and Vercel project still needs to be done from your own accounts.

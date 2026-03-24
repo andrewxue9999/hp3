@@ -1,8 +1,43 @@
 @import "tailwindcss";
 
 :root {
-  --background: #050b16;
-  --foreground: #f8fafc;
+  --background: #f5efe3;
+  --foreground: #1f1b18;
+  --surface: rgba(255, 252, 247, 0.88);
+  --surface-strong: rgba(255, 250, 241, 0.96);
+  --surface-muted: rgba(255, 248, 238, 0.72);
+  --border: rgba(77, 56, 34, 0.14);
+  --border-strong: rgba(77, 56, 34, 0.24);
+  --muted-foreground: #6e5b4c;
+  --accent: #b64d1f;
+  --accent-foreground: #fff8f1;
+  --accent-soft: rgba(182, 77, 31, 0.12);
+  --success: #1d7c57;
+  --success-soft: rgba(29, 124, 87, 0.12);
+  --danger: #a33a2a;
+  --danger-soft: rgba(163, 58, 42, 0.12);
+  --page-glow-a: rgba(255, 173, 85, 0.22);
+  --page-glow-b: rgba(255, 235, 172, 0.34);
+}
+
+html[data-theme="dark"] {
+  --background: #0d1117;
+  --foreground: #eef2f7;
+  --surface: rgba(16, 24, 36, 0.82);
+  --surface-strong: rgba(18, 27, 40, 0.95);
+  --surface-muted: rgba(24, 35, 51, 0.72);
+  --border: rgba(190, 208, 229, 0.13);
+  --border-strong: rgba(190, 208, 229, 0.26);
+  --muted-foreground: #9fb0c2;
+  --accent: #73e2c3;
+  --accent-foreground: #06251f;
+  --accent-soft: rgba(115, 226, 195, 0.14);
+  --success: #6fe5a6;
+  --success-soft: rgba(111, 229, 166, 0.12);
+  --danger: #ff8e7a;
+  --danger-soft: rgba(255, 142, 122, 0.12);
+  --page-glow-a: rgba(115, 226, 195, 0.18);
+  --page-glow-b: rgba(255, 195, 122, 0.14);
 }
 
 @theme inline {
@@ -27,6 +62,6 @@ body {
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.35);
-  color: #ffffff;
+  background: var(--accent-soft);
+  color: var(--foreground);
 }

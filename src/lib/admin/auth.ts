@@ -16,7 +16,7 @@ async function findProfileByField(admin: ReturnType<typeof createAdminClient>, f
       return null;
     }
 
-    throw new Error(`Unable to verify superadmin access: ${error.message}`);
+    throw new Error(`Unable to verify admin access: ${error.message}`);
   }
 
   const [profile] = (data ?? []) as GenericRow[];
@@ -43,7 +43,7 @@ async function findMatchingProfile(admin: ReturnType<typeof createAdminClient>, 
   return null;
 }
 
-export async function requireSuperadmin() {
+export async function requireAdminAccess() {
   const user = await getUserSafely();
 
   if (!user) {
@@ -57,12 +57,21 @@ export async function requireSuperadmin() {
   const admin = createAdminClient();
   const profile = await findMatchingProfile(admin, user);
 
-  if (!profile || asBoolean(profile.is_superadmin) !== true) {
-    redirect("/?denied=superadmin");
+  const isSuperadmin = asBoolean(profile?.is_superadmin) === true;
+  const isMatrixAdmin = asBoolean(profile?.is_matrix_admin) === true;
+
+  if (!profile || (!isSuperadmin && !isMatrixAdmin)) {
+    redirect("/?denied=admin");
   }
 
   return {
     user,
     profile,
+    roles: {
+      isSuperadmin,
+      isMatrixAdmin,
+    },
   };
 }
+
+export const requireSuperadmin = requireAdminAccess;

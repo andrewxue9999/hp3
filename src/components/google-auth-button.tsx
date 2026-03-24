@@ -31,14 +31,14 @@ export default function GoogleAuthButton() {
   return (
     <div>
       <button
-        className="inline-flex items-center rounded-full border border-cyan-300/35 bg-cyan-300/15 px-5 py-3 text-sm font-semibold text-cyan-50 transition hover:bg-cyan-300/25 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isLoading}
         onClick={handleSignIn}
         type="button"
       >
         {isLoading ? "Redirecting..." : "Continue with Google"}
       </button>
-      {error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="mt-2 text-xs text-[var(--danger)]">{error}</p> : null}
     </div>
   );
 }
