@@ -18,6 +18,19 @@ type TestResult = {
   error: string | null;
 };
 
+function parseResponseBody(raw: string) {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(trimmed) as unknown;
+  } catch {
+    return trimmed;
+  }
+}
+
 type HumorFlavorTestConsoleProps = {
   flavorId: string;
   flavorName: string;
@@ -28,12 +41,18 @@ type HumorFlavorTestConsoleProps = {
 
 function parseErrorMessage(statusFallback: string, payload: unknown) {
   if (typeof payload === "string" && payload.trim().length > 0) {
+    if (payload.includes("not valid JSON") || payload.includes("Unexpected token")) {
+      return `${payload} The API is rejecting this flavor's output format. Make sure the final humor-flavor step returns strict JSON, not plain text.`;
+    }
     return payload;
   }
 
   if (payload && typeof payload === "object" && "message" in payload) {
     const value = payload.message;
     if (typeof value === "string" && value.trim().length > 0) {
+      if (value.includes("not valid JSON") || value.includes("Unexpected token")) {
+        return `${value} The API is rejecting this flavor's output format. Make sure the final humor-flavor step returns strict JSON, not plain text.`;
+      }
       return value;
     }
   }
@@ -42,6 +61,10 @@ function parseErrorMessage(statusFallback: string, payload: unknown) {
 }
 
 function extractCaptions(payload: unknown) {
+  if (typeof payload === "string" && payload.trim().length > 0) {
+    return [payload.trim()];
+  }
+
   const rows = Array.isArray(payload)
     ? payload
     : payload && typeof payload === "object" && "captions" in payload && Array.isArray(payload.captions)
@@ -113,14 +136,15 @@ export default function HumorFlavorTestConsole({
           body: JSON.stringify(payload),
         });
 
-        const json = await response.json().catch(() => null);
+        const rawBody = await response.text();
+        const responseBody = parseResponseBody(rawBody);
         if (!response.ok) {
           nextResults.push({
             imageId,
             imageUrl: image?.url ?? null,
             description: image?.description ?? null,
             captions: [],
-            error: parseErrorMessage(`Request failed with status ${response.status}.`, json),
+            error: parseErrorMessage(`Request failed with status ${response.status}.`, responseBody),
           });
           continue;
         }
@@ -129,7 +153,7 @@ export default function HumorFlavorTestConsole({
           imageId,
           imageUrl: image?.url ?? null,
           description: image?.description ?? null,
-          captions: extractCaptions(json),
+          captions: extractCaptions(responseBody),
           error: null,
         });
       }
@@ -184,7 +208,9 @@ export default function HumorFlavorTestConsole({
                 type="checkbox"
               />
               {image.url ? (
-                <img alt={image.description ?? `Image ${image.id}`} className="h-40 w-full rounded-[1rem] object-cover" src={image.url} />
+                <div className="flex h-40 w-full items-center justify-center rounded-[1rem] bg-[var(--surface-strong)] p-2">
+                  <img alt={image.description ?? `Image ${image.id}`} className="h-full w-full rounded-[0.85rem] object-contain" src={image.url} />
+                </div>
               ) : (
                 <div className="flex h-40 items-center justify-center rounded-[1rem] bg-[var(--surface-strong)] text-sm text-[var(--muted-foreground)]">
                   Image preview unavailable
@@ -208,6 +234,7 @@ export default function HumorFlavorTestConsole({
 
       <div className="mt-4 rounded-[1.2rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4 text-sm leading-7 text-[var(--muted-foreground)]">
         Select one or more images, run the flavor, then compare the returned captions against the ordered steps you wrote above. If the output is off, revise the prompts or the `order_by` sequence and test again.
+        The final caption-writing step must return strict JSON if the backend parser expects JSON-formatted captions.
       </div>
 
       {error ? (
@@ -223,7 +250,9 @@ export default function HumorFlavorTestConsole({
               <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
                 <div>
                   {result.imageUrl ? (
-                    <img alt={result.description ?? `Image ${result.imageId}`} className="h-44 w-full rounded-[1rem] object-cover" src={result.imageUrl} />
+                    <div className="flex h-44 w-full items-center justify-center rounded-[1rem] bg-[var(--surface-strong)] p-2">
+                      <img alt={result.description ?? `Image ${result.imageId}`} className="h-full w-full rounded-[0.85rem] object-contain" src={result.imageUrl} />
+                    </div>
                   ) : (
                     <div className="flex h-44 items-center justify-center rounded-[1rem] bg-[var(--surface-strong)] text-sm text-[var(--muted-foreground)]">
                       No preview

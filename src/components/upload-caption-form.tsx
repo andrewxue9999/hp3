@@ -50,6 +50,19 @@ function parseErrorMessage(statusFallback: string, payload: unknown) {
   return statusFallback;
 }
 
+function parseResponseBody(raw: string) {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(trimmed) as unknown;
+  } catch {
+    return trimmed;
+  }
+}
+
 export default function UploadCaptionForm() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -155,19 +168,22 @@ export default function UploadCaptionForm() {
           imageId,
         }),
       });
-      const captionJson = await captionResponse.json();
+      const captionJson = parseResponseBody(await captionResponse.text());
       if (!captionResponse.ok) {
         throw new Error(parseErrorMessage("Failed to generate captions.", captionJson));
       }
 
-      const captions = Array.isArray(captionJson)
-        ? (captionJson as CaptionRecord[])
-        : captionJson &&
-            typeof captionJson === "object" &&
-            "captions" in captionJson &&
-            Array.isArray(captionJson.captions)
-          ? (captionJson.captions as CaptionRecord[])
-          : [];
+      const captions =
+        typeof captionJson === "string"
+          ? ([{ content: captionJson }] as CaptionRecord[])
+          : Array.isArray(captionJson)
+            ? (captionJson as CaptionRecord[])
+            : captionJson &&
+                typeof captionJson === "object" &&
+                "captions" in captionJson &&
+                Array.isArray(captionJson.captions)
+              ? (captionJson.captions as CaptionRecord[])
+              : [];
 
       setResults((previous) => [{ uploadedAt: Date.now(), imageUrl: cdnUrl, captions }, ...previous]);
       setFile(null);

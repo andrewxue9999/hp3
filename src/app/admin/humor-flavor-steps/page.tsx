@@ -113,6 +113,10 @@ export default async function AdminHumorFlavorStepsPage({ searchParams }: PagePr
       <section className="space-y-6">
         {visibleFlavors.map((flavor) => {
           const flavorSteps = getStepsForFlavor(steps, flavor.id);
+          const defaultInputTypeId = flavorSteps[0]?.inputTypeId ?? "";
+          const defaultOutputTypeId = flavorSteps[0]?.outputTypeId ?? "";
+          const defaultModelId = flavorSteps[0]?.modelId ?? "";
+          const defaultStepTypeId = flavorSteps[0]?.stepTypeId ?? "";
 
           return (
             <article className="rounded-[2rem] border border-[color:var(--border)] bg-[var(--surface)] p-6" key={flavor.id}>
@@ -159,6 +163,22 @@ export default async function AdminHumorFlavorStepsPage({ searchParams }: PagePr
                 <label className="block lg:max-w-xs">
                   <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_temperature</span>
                   <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue="0.8" name="temperature" step="0.1" type="number" />
+                </label>
+                <label className="block lg:max-w-xs">
+                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_input_type_id</span>
+                  <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={defaultInputTypeId} name="input_type_id" type="number" required />
+                </label>
+                <label className="block lg:max-w-xs">
+                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_output_type_id</span>
+                  <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={defaultOutputTypeId} name="output_type_id" type="number" required />
+                </label>
+                <label className="block lg:max-w-xs">
+                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_model_id</span>
+                  <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={defaultModelId} name="model_id" type="number" required />
+                </label>
+                <label className="block lg:max-w-xs">
+                  <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">humor_flavor_step_type_id</span>
+                  <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={defaultStepTypeId} name="step_type_id" type="number" required />
                 </label>
                 <div className="flex items-end">
                   <button className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]" type="submit">
@@ -213,6 +233,22 @@ export default async function AdminHumorFlavorStepsPage({ searchParams }: PagePr
                         <label className="block lg:max-w-xs">
                           <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_temperature</span>
                           <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.temperature ?? ""} name="temperature" step="0.1" type="number" />
+                        </label>
+                        <label className="block lg:max-w-xs">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_input_type_id</span>
+                          <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.inputTypeId ?? ""} name="input_type_id" type="number" required />
+                        </label>
+                        <label className="block lg:max-w-xs">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_output_type_id</span>
+                          <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.outputTypeId ?? ""} name="output_type_id" type="number" required />
+                        </label>
+                        <label className="block lg:max-w-xs">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_model_id</span>
+                          <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.modelId ?? ""} name="model_id" type="number" required />
+                        </label>
+                        <label className="block lg:max-w-xs">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">humor_flavor_step_type_id</span>
+                          <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.stepTypeId ?? ""} name="step_type_id" type="number" required />
                         </label>
                         <div className="flex items-end">
                           <button className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]" type="submit">

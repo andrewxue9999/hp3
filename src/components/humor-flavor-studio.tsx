@@ -64,6 +64,10 @@ export default function HumorFlavorStudio({
   const selectedFlavor = flavors.find((flavor) => flavor.id === selectedFlavorId) ?? flavors[0] ?? null;
   const selectedSteps = selectedFlavor ? getStepsForFlavor(steps, selectedFlavor.id) : [];
   const selectedCaptions = selectedFlavor ? getCaptionsForFlavor(recentCaptions, selectedFlavor.id) : [];
+  const defaultInputTypeId = selectedSteps[0]?.inputTypeId ?? "";
+  const defaultOutputTypeId = selectedSteps[0]?.outputTypeId ?? "";
+  const defaultModelId = selectedSteps[0]?.modelId ?? "";
+  const defaultStepTypeId = selectedSteps[0]?.stepTypeId ?? "";
   const testImages = images.slice(0, 9);
 
   return (
@@ -205,6 +209,7 @@ export default function HumorFlavorStudio({
                 <div className="mt-4 rounded-[1.2rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4 text-sm leading-7 text-[var(--muted-foreground)]">
                   Each step runs in ascending `order_by`. A good pattern is:
                   step 1 describes the image, step 2 finds the humor angle, step 3 writes final captions.
+                  If the API expects JSON, the final step should output strict JSON only, with no intro text or markdown fences.
                 </div>
 
                 <form action={createStepAction} className="mt-6 grid gap-4 lg:grid-cols-2">
@@ -228,6 +233,22 @@ export default function HumorFlavorStudio({
                   <label className="block lg:max-w-xs">
                     <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_temperature</span>
                     <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue="0.8" name="temperature" type="number" step="0.1" />
+                  </label>
+                  <label className="block lg:max-w-xs">
+                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_input_type_id</span>
+                    <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={defaultInputTypeId} name="input_type_id" type="number" required />
+                  </label>
+                  <label className="block lg:max-w-xs">
+                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_output_type_id</span>
+                    <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={defaultOutputTypeId} name="output_type_id" type="number" required />
+                  </label>
+                  <label className="block lg:max-w-xs">
+                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_model_id</span>
+                    <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={defaultModelId} name="model_id" type="number" required />
+                  </label>
+                  <label className="block lg:max-w-xs">
+                    <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">humor_flavor_step_type_id</span>
+                    <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={defaultStepTypeId} name="step_type_id" type="number" required />
                   </label>
                   <div className="flex items-end">
                     <button className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]" type="submit">
@@ -288,6 +309,22 @@ export default function HumorFlavorStudio({
                           <label className="block lg:max-w-xs">
                             <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_temperature</span>
                             <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.temperature ?? ""} name="temperature" step="0.1" type="number" />
+                          </label>
+                          <label className="block lg:max-w-xs">
+                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_input_type_id</span>
+                            <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.inputTypeId ?? ""} name="input_type_id" type="number" required />
+                          </label>
+                          <label className="block lg:max-w-xs">
+                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_output_type_id</span>
+                            <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.outputTypeId ?? ""} name="output_type_id" type="number" required />
+                          </label>
+                          <label className="block lg:max-w-xs">
+                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_model_id</span>
+                            <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.modelId ?? ""} name="model_id" type="number" required />
+                          </label>
+                          <label className="block lg:max-w-xs">
+                            <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">humor_flavor_step_type_id</span>
+                            <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.stepTypeId ?? ""} name="step_type_id" type="number" required />
                           </label>
                           <div className="flex flex-wrap items-end gap-3">
                             <button className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]" type="submit">

@@ -19,6 +19,10 @@ export type HumorFlavorStepRecord = GenericRow & {
   userPrompt: string | null;
   stepOrder: number;
   temperature: number | null;
+  inputTypeId: number | null;
+  outputTypeId: number | null;
+  modelId: number | null;
+  stepTypeId: number | null;
 };
 
 export type HumorFlavorImageRecord = {
@@ -95,6 +99,10 @@ function normalizeStep(row: GenericRow): HumorFlavorStepRecord | null {
     userPrompt: asString(row.llm_user_prompt),
     stepOrder,
     temperature: asNumber(row.llm_temperature),
+    inputTypeId: asNumber(row.llm_input_type_id),
+    outputTypeId: asNumber(row.llm_output_type_id),
+    modelId: asNumber(row.llm_model_id),
+    stepTypeId: asNumber(row.humor_flavor_step_type_id),
   };
 }
 

@@ -109,12 +109,20 @@ function buildStepPayload(
   const payload: Record<string, unknown> = {};
   const orderKey = getFlavorOrderField();
   const flavorKey = getFlavorForeignKey();
+  const inputTypeId = parseOptionalNumber(formData, "input_type_id") ?? asNumber(stepSample?.llm_input_type_id);
+  const outputTypeId = parseOptionalNumber(formData, "output_type_id") ?? asNumber(stepSample?.llm_output_type_id);
+  const modelId = parseOptionalNumber(formData, "model_id") ?? asNumber(stepSample?.llm_model_id);
+  const stepTypeId = parseOptionalNumber(formData, "step_type_id") ?? asNumber(stepSample?.humor_flavor_step_type_id);
 
   setValueIfPresent(payload, flavorKey, flavorId);
   setValueIfPresent(payload, "description", parseOptionalText(formData, "step_description"));
   setValueIfPresent(payload, "llm_system_prompt", parseOptionalText(formData, "system_prompt"));
   setValueIfPresent(payload, "llm_user_prompt", parseOptionalText(formData, "user_prompt"));
   setValueIfPresent(payload, "llm_temperature", parseOptionalNumber(formData, "temperature"));
+  setValueIfPresent(payload, "llm_input_type_id", inputTypeId);
+  setValueIfPresent(payload, "llm_output_type_id", outputTypeId);
+  setValueIfPresent(payload, "llm_model_id", modelId);
+  setValueIfPresent(payload, "humor_flavor_step_type_id", stepTypeId);
 
   const stepOrder = parseOptionalNumber(formData, "step_order");
   if (stepOrder !== null) {
