@@ -26,6 +26,8 @@ type HumorFlavorStudioProps = {
   images: HumorFlavorImageRecord[];
   recentCaptions: HumorFlavorCaptionRecord[];
   selectedFlavorId: string | null;
+  duplicateFlavor: HumorFlavorRecord | null;
+  duplicateSteps: HumorFlavorStepRecord[];
   notice: string | null;
   status: "success" | "error" | null;
   apiBaseUrl: string;
@@ -56,6 +58,8 @@ export default function HumorFlavorStudio({
   images,
   recentCaptions,
   selectedFlavorId,
+  duplicateFlavor,
+  duplicateSteps,
   notice,
   status,
   apiBaseUrl,
@@ -118,15 +122,74 @@ export default function HumorFlavorStudio({
               Use `slug` as the unique machine-friendly identifier for the flavor.
               `description` should explain the style or goal of the chain so you can recognize it later.
             </div>
-            <form action={createFlavorAction} className="mt-5 space-y-4">
+            <form action={createFlavorAction} className="mt-5 space-y-4" id="create-flavor">
               <label className="block">
                 <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">slug</span>
-                <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="slug" required />
+                <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue="" name="slug" required />
               </label>
               <label className="block">
                 <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">description</span>
-                <textarea className="min-h-28 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" name="description" />
+                <textarea className="min-h-28 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={duplicateFlavor?.description ?? ""} name="description" />
               </label>
+              {duplicateFlavor ? (
+                <div className="rounded-[1.2rem] border border-[color:var(--accent)] bg-[var(--accent-soft)] p-4 text-sm leading-7 text-[var(--foreground)]">
+                  Duplicating <strong>{duplicateFlavor.label}</strong>. The step chain has been copied below. Enter a new unique
+                  slug, adjust anything you want, then create the new flavor.
+                </div>
+              ) : null}
+              {duplicateSteps.length > 0 ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Copied Steps</p>
+                    <p className="mt-2 text-sm leading-7 text-[var(--muted-foreground)]">
+                      These steps will be created alongside the new flavor in the same order.
+                    </p>
+                  </div>
+                  {duplicateSteps.map((step, index) => (
+                    <article className="rounded-[1.3rem] border border-[color:var(--border)] bg-[var(--surface-muted)] p-4" key={step.id}>
+                      <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">Step {index + 1}</p>
+                      <div className="mt-4 grid gap-4">
+                        <label className="block">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">description</span>
+                          <textarea className="min-h-24 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.description ?? ""} name="step_description" required />
+                        </label>
+                        <label className="block">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">order_by</span>
+                          <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.stepOrder} name="step_order" type="number" />
+                        </label>
+                        <label className="block">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_system_prompt</span>
+                          <textarea className="min-h-32 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.systemPrompt ?? ""} name="system_prompt" />
+                        </label>
+                        <label className="block">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_user_prompt</span>
+                          <textarea className="min-h-32 w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.userPrompt ?? ""} name="user_prompt" />
+                        </label>
+                        <label className="block">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_temperature</span>
+                          <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.temperature ?? ""} name="temperature" step="0.1" type="number" />
+                        </label>
+                        <label className="block">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_input_type_id</span>
+                          <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.inputTypeId ?? ""} name="input_type_id" type="number" required />
+                        </label>
+                        <label className="block">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_output_type_id</span>
+                          <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.outputTypeId ?? ""} name="output_type_id" type="number" required />
+                        </label>
+                        <label className="block">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">llm_model_id</span>
+                          <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.modelId ?? ""} name="model_id" type="number" required />
+                        </label>
+                        <label className="block">
+                          <span className="mb-2 block text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">humor_flavor_step_type_id</span>
+                          <input className="w-full rounded-[1rem] border border-[color:var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--foreground)] outline-none" defaultValue={step.stepTypeId ?? ""} name="step_type_id" type="number" required />
+                        </label>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : null}
               <button className="w-full rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]" type="submit">
                 Create Flavor
               </button>
@@ -140,13 +203,12 @@ export default function HumorFlavorStudio({
                 const isSelected = selectedFlavor?.id === flavor.id;
 
                 return (
-                  <Link
-                    className={`block rounded-[1.3rem] border px-4 py-4 transition ${
+                  <article
+                    className={`rounded-[1.3rem] border px-4 py-4 transition ${
                       isSelected
                         ? "border-[color:var(--accent)] bg-[var(--accent-soft)]"
                         : "border-[color:var(--border)] bg-[var(--surface-muted)] hover:border-[color:var(--border-strong)]"
                     }`}
-                      href={`/admin/humor-flavors?flavor=${encodeURIComponent(flavor.id)}`}
                     key={flavor.id}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -161,7 +223,21 @@ export default function HumorFlavorStudio({
                     <p className="mt-3 line-clamp-3 text-sm text-[var(--muted-foreground)]">
                       {flavor.description ?? "No description yet."}
                     </p>
-                  </Link>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Link
+                        className="rounded-full border border-[color:var(--border-strong)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]"
+                        href={`/admin/humor-flavors?flavor=${encodeURIComponent(flavor.id)}`}
+                      >
+                        Open
+                      </Link>
+                      <Link
+                        className="rounded-full border border-[color:var(--accent)] bg-[var(--accent-soft)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]"
+                        href={`/admin/humor-flavors?flavor=${encodeURIComponent(flavor.id)}&duplicateFrom=${encodeURIComponent(flavor.id)}#create-flavor`}
+                      >
+                        Duplicate This Flavor
+                      </Link>
+                    </div>
+                  </article>
                 );
               })}
             </div>
@@ -193,6 +269,12 @@ export default function HumorFlavorStudio({
                     <button className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]" type="submit">
                       Save Flavor
                     </button>
+                    <Link
+                      className="rounded-full border border-[color:var(--accent)] bg-[var(--accent-soft)] px-5 py-3 text-sm font-semibold text-[var(--foreground)]"
+                      href={`/admin/humor-flavors?flavor=${encodeURIComponent(selectedFlavor.id)}&duplicateFrom=${encodeURIComponent(selectedFlavor.id)}#create-flavor`}
+                    >
+                      Duplicate This Flavor
+                    </Link>
                   </div>
                 </form>
 

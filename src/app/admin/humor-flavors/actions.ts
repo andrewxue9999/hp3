@@ -65,6 +65,24 @@ function parseOptionalNumber(formData: FormData, key: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function parseOptionalTextList(formData: FormData, key: string) {
+  return formData
+    .getAll(key)
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .map((value) => (value.length > 0 ? value : null));
+}
+
+function parseOptionalNumberList(formData: FormData, key: string) {
+  return formData.getAll(key).map((value) => {
+    if (typeof value !== "string" || value.trim().length === 0) {
+      return null;
+    }
+
+    const parsed = Number(value.trim());
+    return Number.isFinite(parsed) ? parsed : null;
+  });
+}
+
 function touchTimestamps(payload: Record<string, unknown>, sample: GenericRow | null) {
   const availableKeys = new Set(sample ? Object.keys(sample) : TIMESTAMP_KEYS);
   for (const key of TIMESTAMP_KEYS) {
@@ -138,19 +156,69 @@ function buildStepPayload(
   return payload;
 }
 
+function buildBundledStepPayloads(formData: FormData, stepSample: GenericRow | null, flavorId: string, actorProfileId: string) {
+  const descriptions = parseOptionalTextList(formData, "step_description");
+  if (descriptions.length === 0) {
+    return [];
+  }
+
+  const stepOrders = parseOptionalNumberList(formData, "step_order");
+  const systemPrompts = parseOptionalTextList(formData, "system_prompt");
+  const userPrompts = parseOptionalTextList(formData, "user_prompt");
+  const temperatures = parseOptionalNumberList(formData, "temperature");
+  const inputTypeIds = parseOptionalNumberList(formData, "input_type_id");
+  const outputTypeIds = parseOptionalNumberList(formData, "output_type_id");
+  const modelIds = parseOptionalNumberList(formData, "model_id");
+  const stepTypeIds = parseOptionalNumberList(formData, "step_type_id");
+
+  return descriptions.map((description, index) => {
+    const payload = new FormData();
+
+    if (description) payload.set("step_description", description);
+    if (systemPrompts[index] !== null) payload.set("system_prompt", String(systemPrompts[index]));
+    if (userPrompts[index] !== null) payload.set("user_prompt", String(userPrompts[index]));
+    if (temperatures[index] !== null) payload.set("temperature", String(temperatures[index]));
+    if (inputTypeIds[index] !== null) payload.set("input_type_id", String(inputTypeIds[index]));
+    if (outputTypeIds[index] !== null) payload.set("output_type_id", String(outputTypeIds[index]));
+    if (modelIds[index] !== null) payload.set("model_id", String(modelIds[index]));
+    if (stepTypeIds[index] !== null) payload.set("step_type_id", String(stepTypeIds[index]));
+    payload.set("step_order", String(stepOrders[index] ?? index + 1));
+
+    return buildStepPayload(payload, stepSample, flavorId, "create", actorProfileId);
+  });
+}
+
 export async function createFlavorAction(formData: FormData) {
   const { profile } = await requireAdminAccess();
 
   try {
     const admin = createAdminClient();
-    const { flavorSample } = await loadSamples();
+    const { flavorSample, stepSample } = await loadSamples();
     const payload = buildFlavorPayload(formData, flavorSample, "create", String(profile.id));
-    const { error } = await admin.from("humor_flavors").insert(payload);
+    const { data: insertedFlavor, error } = await admin.from("humor_flavors").insert(payload).select("*").single();
     if (error) {
       throw new Error(error.message);
     }
+    const createdFlavorId = asString(insertedFlavor?.id);
+    if (!createdFlavorId) {
+      throw new Error("Created flavor is missing an id.");
+    }
+
+    try {
+      const stepPayloads = buildBundledStepPayloads(formData, stepSample, createdFlavorId, String(profile.id));
+      if (stepPayloads.length > 0) {
+        const { error: stepError } = await admin.from("humor_flavor_steps").insert(stepPayloads);
+        if (stepError) {
+          throw new Error(stepError.message);
+        }
+      }
+    } catch (error) {
+      await admin.from("humor_flavors").delete().eq("id", createdFlavorId);
+      throw error;
+    }
+
     revalidatePath("/admin/humor-flavors");
-    buildRedirect("Humor flavor created.", "success");
+    buildRedirect("Humor flavor created.", "success", createdFlavorId);
   } catch (error) {
     if (isRedirectLikeError(error)) {
       throw error;
