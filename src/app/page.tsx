@@ -56,12 +56,6 @@ export default async function Home({ searchParams }: HomePageProps) {
                 Admin Unavailable: Add Service Key
               </span>
             )}
-            <Link
-              className="rounded-full border border-[color:var(--border)] bg-[var(--surface-muted)] px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-strong)]"
-              href="/term-types"
-            >
-              Legacy Caption Route
-            </Link>
           </div>
         </section>
 

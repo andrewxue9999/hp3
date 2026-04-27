@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,var(--page-glow-a),transparent_28%),radial-gradient(circle_at_85%_15%,var(--page-glow-b),transparent_20%),linear-gradient(180deg,var(--background)_0%,color-mix(in_srgb,var(--background)_82%,#0f172a)_55%,var(--background)_100%)] text-[var(--foreground)]">
-      <div className="mx-auto grid min-h-screen max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-6">
+      <div className="mx-auto grid min-h-screen max-w-[1800px] gap-6 px-4 py-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-6">
         <aside className="rounded-[2rem] border border-[color:var(--border)] bg-[var(--surface)] p-6 backdrop-blur-xl">
           <div className="rounded-[1.75rem] border border-[color:var(--border)] bg-[var(--surface-strong)] p-5">
             <p className="text-xs uppercase tracking-[0.35em] text-[var(--muted-foreground)]">Humor Project</p>

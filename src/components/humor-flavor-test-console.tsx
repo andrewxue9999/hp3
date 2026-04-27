@@ -169,11 +169,11 @@ export default function HumorFlavorTestConsole({
   return (
     <section className="rounded-[2rem] border border-[color:var(--border)] bg-[var(--surface)] p-6 shadow-[0_18px_50px_-38px_rgba(0,0,0,0.45)]">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.26em] text-[var(--muted-foreground)]">Image Test Set</p>
           <h3 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">Run {flavorName} against the API</h3>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted-foreground)]">
-            This sends the selected image IDs to <code>{apiBaseUrl}/pipeline/generate-captions</code> using the logged-in
+          <p className="mt-2 max-w-3xl break-words text-sm leading-7 text-[var(--muted-foreground)]">
+            This sends the selected image IDs to <code className="break-all">{apiBaseUrl}/pipeline/generate-captions</code> using the logged-in
             user&apos;s Supabase access token.
           </p>
         </div>

@@ -36,10 +36,10 @@ type HumorFlavorStudioProps = {
 
 function panelTitle(eyebrow: string, title: string, description?: string) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-xs uppercase tracking-[0.26em] text-[var(--muted-foreground)]">{eyebrow}</p>
-      <h3 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">{title}</h3>
-      {description ? <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted-foreground)]">{description}</p> : null}
+      <h3 className="mt-2 break-words text-2xl font-semibold text-[var(--foreground)]">{title}</h3>
+      {description ? <p className="mt-2 max-w-3xl break-words text-sm leading-7 text-[var(--muted-foreground)]">{description}</p> : null}
     </div>
   );
 }
@@ -114,7 +114,7 @@ export default function HumorFlavorStudio({
         </section>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <section className="grid gap-6 xl:grid-cols-[280px_minmax(0,1.3fr)] 2xl:grid-cols-[320px_minmax(0,1.45fr)]">
         <aside className="space-y-6">
           <section className="rounded-[2rem] border border-[color:var(--border)] bg-[var(--surface)] p-5">
             {panelTitle("Create", "New humor flavor", "Write directly to `humor_flavors.slug` and `description`.")}
